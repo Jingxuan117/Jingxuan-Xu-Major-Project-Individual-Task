@@ -1,8 +1,5 @@
-// The use of Perlin noise and randomized values in this commit’s code changes lends an animation effect. 
-// By adding random offsets of ’xOff‘ and ’yOff‘ (based on Perlin noise) to each rectangle object (’MyRectangle‘), 
-// the code produces smooth movement and variation of the rectangles at different positions. 
-// This noise offset allows the rectangles to move slightly and naturally across the canvas, 
-// making the animation more consistent and randomized, and avoiding a completely random ’bouncing‘ effect.
+// The change in Commit 3 was to the color selection and placement, 
+// which set the stage for the following addition of another group of perlin noise animations.
 
 class Pattern {
     constructor(side, colors) {
@@ -16,11 +13,12 @@ class Pattern {
             let y = yPositions[i];
             for (let x = 0; x < width; x += this.side) {
                 let randomColor = random(this.colors); // Select a random color from the provided colors
-                rs.push(new MyRectangle(x, y - this.side / 2, this.side, this.side, randomColor)); // Create and push the rectangle object to the array
+                rs.push(new MyRectangle(x, y - this.side / 2, this.side, this.side, randomColor)); 
+                // Create and push the rectangle object to the array
             }
         }
     }
-  
+
     drawHorizontalPattern(xPositions, yPositions) {
         for (let i = 0; i < xPositions.length; i++) {
             let x = xPositions[i];
@@ -31,30 +29,32 @@ class Pattern {
         }
     }
   }
-  
-  class MyRectangle {
-    constructor(x, y, width, height, color) {
-        this.x = x;
-        this.y = y;
-        this.width = width;
-        this.height = height;
-        this.color = color;
-        this.xOff = random(1000);
-        this.yOff = random(1000);
-    }
-  
+
+    class MyRectangle {
+        constructor(x, y, width, height, color) {
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
+            this.color = color;
+            this.xOff = random(1000); // Random offset for X position noise
+            this.yOff = random(1000); // Random offset for Y position noise
+      }
+
     display() {
+    // Calculate noise values - create slight random movement
         let noiseX = noise(this.xOff) * 10 - 5;
         let noiseY = noise(this.yOff) * 10 - 5;
-  
+
         fill(this.color);
         rect(this.x + noiseX, this.y + noiseY, this.width, this.height);
-  
+        // Increment noise offset - continuous movement
         this.xOff += 0.05;
         this.yOff += 0.05;
     }
   }
   
+  // Variable to control vertical movement of elements
   let leftY = 0;
   let grey;
   let darkgery;
@@ -66,71 +66,83 @@ class Pattern {
   let xPositions = []
   let pattern;
   let rs = [];
-  
-  // Setup function to initialize the canvas and variables
+  // variable for grid initialization
+  let cols, rows;
+  let xPositions2, yPositions2;
+  let filledBlocks;
+  let gridSize = 40; // size of each grid
+  // variables for noise and animation
+  let time = 0;
+  let noiseScale = 0.2; 
+  let timeIncrement = 0.005;
+  let noiseThreshold = 0.5;
+
+  // initialize the canvas and variables
   function setup() {
     createCanvas(900, 900);
     strokeWeight(1.5);
     background(255);
     side = 30;
-  
+
     yellow = color(236, 212, 42);
     blue = color(68, 104, 178);
     grey = color(217, 218, 212);
     red = color(165, 57, 45);
     darkgery = (114, 113, 113);
-  
+
     let colors = [yellow, blue, grey, red];
-  
+    // set x and y positions for the patterns
     yPositions = [105, 285, 405, 585, 765];
     xPositions = [105, 225, 735, 855];
-  
+
     pattern = new Pattern(side, colors);
-  
+
     pattern.drawVerticalPattern(xPositions, yPositions);
     pattern.drawHorizontalPattern(xPositions, yPositions);
+
+    initializeGrid();
   }
-  
+
   function draw() {
-    // Horizontal conveyor belt, the third row
-    for (let i = 0; i < rs.length; i += 1) {
-        let r = rs[i];
-        r.display();
+      // Display each rectangle in the array with noise-based movement
+      for (let i = 0; i < rs.length; i += 1) {
+          let r = rs[i];
+          r.display(); // Call the display to show the rectangle
     }
-  
+
     fill(grey);
     rect(0, 300, 900, 90);
-  
+
     // Two parcel storage doors
     fill(darkgery);
     //   rect(90, 300, 30, 90);
     //   rect(210, 300, 30, 90);
     //   rect(720, 300, 30, 90);
     //   rect(840, 300, 30, 90);
-  
+
     // Left parcel passageway
     fill(grey);
     rect(120, 0, 90, 900);
-  
+
     // Building Columns
     fill(darkgery);
     rect(370, 300, 50, 90);
     rect(560, 300, 50, 90);
-  
-    // Push the Package movement
+
+    // Start isolated drawing state for animated package
     push();
     translate(0, leftY);
     leftY -= 1;
     if (leftY < -900) {
         leftY = 900;
     }
-  
+
     // Left package machines
     fill(darkgery);
     rect(120, 240, 90, 20);
     rect(120, 490, 90, 20);
     rect(120, 820, 90, 20);
-  
+
     // Package colors
     fill(240, 210, 10);
     // Package 1
@@ -140,16 +152,17 @@ class Pattern {
     rect(120, 400, 87, 90);
     // Package 3
     rect(125, 750, 80, 70);
-  
+
     // Package label
     fill(250, 250, 240);
-    rect(170, 185, 30, 22); // 1.1 (Place 1, Package 1)
-    rect(192, 145, 14, 10); // 1.2
+    rect(170, 185, 30, 22); // 1
+    rect(192, 145, 14, 10); // 1
     rect(135, 445, 40, 30); // 2
     rect(165, 760, 36, 26); // 3
-  
+
+    // End isolated drawing state
     pop();
-  
+
     // Package 4 inside horizontal conveyor belt
     fill(240, 210, 10);
     rect(380, 310, 110, 80);
@@ -158,42 +171,42 @@ class Pattern {
     // Tape on the second package
     fill(221, 195, 140);
     //rect(182, 400, 18, 90);
-  
+
     // Right elevator passageway
     fill(grey);
     rect(750, 0, 90, 900);
-  
+
     // Conveyor belt behind the elevator on the right
     fill(173, 173, 170);
     rect(785, 0, 20, 900);
-  
+
     // Elevator control box
     fill(173, 173, 170);
     rect(760, 150, 70, 70);
     fill(68, 104, 178);
     rect(780, 170, 30, 30);
-  
+
     // Elevator doors
     fill(68, 104, 178);
     rect(750, 775, 45, 125);
     rect(795, 775, 45, 125);
-  
+
     fill(darkgery);
     rect(750, 540, 90, 20); // Elevator top
     rect(750, 700, 90, 20); // Elevator bottom
-  
+
     fill(blue);
     rect(750, 560, 90, 140); // Elevator box
-  
+
     rect(580, 520, 120, 50); //sofa
     rect(590, 500, 100, 40);
     fill(grey);
     rect(665, 512, 28, 28); //pillow
     rect(625, 520, 35, 20);
-  
+
     //plant
     rect(650, 700, 40, 50); // flowerpot
-  
+
     fill(yellow); // leaf
     rect(630, 680, 15, 15);
     rect(650, 660, 15, 15);
@@ -333,3 +346,13 @@ class Pattern {
         catY2 * 0.983
     ); //right ear
   }
+
+    function initializeGrid() {
+        // Calculate the number of columns & rows 
+        cols = int(width / gridSize) + 1;
+        rows = int(height / gridSize) + 1;
+        xPositions = new Array(cols);
+        yPositions = new Array(rows);
+        // track which grid blocks are filled
+        filledBlocks = Array.from(Array(cols - 1), () => new Array(rows - 1));
+}
